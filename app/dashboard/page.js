@@ -508,9 +508,6 @@ export default function DashboardPage() {
                     <h3 className="font-bold text-gray-900">
                       Available Cities
                     </h3>
-                    <p className="text-gray-400 text-xs mt-0.5">
-                      Loaded from /api/cities
-                    </p>
                   </div>
                 </div>
 
