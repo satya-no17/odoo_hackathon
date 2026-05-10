@@ -38,9 +38,13 @@ export default function TripsPage() {
     }
 
     const currentUser = JSON.parse(saved)
+    const timer = setTimeout(() => setUser(currentUser), 0)
 
-    setUser(currentUser)
-    loadTrips(currentUser.id)
+    fetch(`/api/trips?userId=${currentUser.id}`)
+      .then((res) => res.json())
+      .then((data) => setTrips(data.trips || []))
+
+    return () => clearTimeout(timer)
   }, [router])
 
   async function deleteTrip(id) {
@@ -66,6 +70,16 @@ export default function TripsPage() {
     if (start <= now && end >= now) return "Ongoing"
 
     return "Upcoming"
+  }
+
+  function formatDate(value, fallback) {
+    if (!value) return fallback
+
+    return new Date(value).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
   }
 
   const visibleTrips = trips.filter((trip) => {
@@ -208,8 +222,8 @@ export default function TripsPage() {
                     {/* Details */}
                     <div className="mt-5 space-y-2 text-sm text-gray-500">
                       <p>
-                        📅 {trip.start_date || "No start date"} →{" "}
-                        {trip.end_date || "No end date"}
+                        📅 {formatDate(trip.start_date, "No start date")} →{" "}
+                        {formatDate(trip.end_date, "No end date")}
                       </p>
 
                       <p>

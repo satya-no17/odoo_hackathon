@@ -49,7 +49,7 @@ export default function LoginPage() {
 
       {/* Logo + tagline */}
       <div className="animate-[fadeUp_0.5s_ease_both] mb-0.5">
-        <PlanzoLogo className="w-44 h-auto" />
+        <PlanzoLogo className="h-24 w-auto" />
       </div>
       <p className="animate-[fadeUp_0.5s_ease_both] [animation-delay:0.05s] text-[10px] text-violet-300 font-bold tracking-[0.25em] uppercase mb-7">
         All plans. One journey.

@@ -49,7 +49,7 @@ export default function SignupPage() {
 
       {/* Logo + tagline */}
       <div className="animate-[fadeUp_0.5s_ease_both] mb-0.5">
-        <PlanzoLogo className="w-44 h-auto" />
+        <PlanzoLogo className="h-24 w-auto" />
       </div>
       <p className="animate-[fadeUp_0.5s_ease_both] [animation-delay:0.05s] text-[10px] text-violet-300 font-bold tracking-[0.25em] uppercase mb-7">
         All plans. One journey.
@@ -70,7 +70,7 @@ export default function SignupPage() {
 
         {/* Heading */}
         <h1 className="text-[26px] font-black text-indigo-950 tracking-tight leading-tight mb-0.5">
-          Let's get you moving.
+          Let&apos;s get you moving.
         </h1>
         <p className="text-[13px] text-gray-400 mb-6">Your first trip is just a few taps away.</p>
 

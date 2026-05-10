@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
+import PlanzoLogo from "@/components/PlanzoLogo"
 
 import {
   ArrowLeft,
@@ -12,7 +13,6 @@ import {
   ChevronRight,
   Compass,
   FileText,
-  Globe,
   MapPin,
   Sparkles,
 } from "lucide-react"
@@ -56,7 +56,9 @@ export default function CreateTripPage() {
       return
     }
 
-    setUser(JSON.parse(saved))
+    const timer = setTimeout(() => setUser(JSON.parse(saved)), 0)
+
+    return () => clearTimeout(timer)
   }, [router])
 
   function updateField(event) {
@@ -145,15 +147,9 @@ export default function CreateTripPage() {
           </span>
         </Link>
 
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center">
-            <Globe size={15} className="text-white" />
-          </div>
-
-          <span className="font-black text-indigo-950 tracking-tight">
-            Traveloop
-          </span>
-        </div>
+        <Link href="/" className="flex items-center">
+          <PlanzoLogo className="h-16 w-auto" />
+        </Link>
 
         <div className="text-xs text-violet-400 font-semibold">
           Step {step + 1} of 3

@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Planzo Travel Planner
 
-## Getting Started
+A travel planning app built with Next.js 16, React 19, Tailwind CSS 4, and PostgreSQL.
 
-First, run the development server:
+## Overview
+
+Planzo helps users plan multi-city trips with stops, activity budgets, packing lists, and trip notes.
+
+The app includes:
+
+- user sign up / sign in
+- city browsing from `/api/cities`
+- trip creation and dashboard summary
+- ordered stops with arrival/departure dates
+- activity tracking and costs per stop
+- packing list items per trip
+- trip notes for planning details
+- public trip view via `/trips/public/[slug]`
+
+## Local Setup
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the app locally:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then visit `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Live Demo
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Check the deployed app here:
 
-## Learn More
+- https://planzo-zeta.vercel.app/
 
-To learn more about Next.js, take a look at the following resources:
+## Test Account
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Use this account to sign in quickly during testing:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Email: `test@test.com`
+- Password: `test`
 
-## Deploy on Vercel
+> The account requires a matching `users` record in the connected PostgreSQL database.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Authentication
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Available frontend pages:
+
+- `/auth/login` — sign in
+- `/auth/signup` — create a new account
+- `/dashboard` — user dashboard after login
+
+Login state is stored in browser `localStorage` under the key `traveloop_user`.
+
+## Database Configuration
+
+This app uses PostgreSQL through `lib/db.js`.
+
+Create a `.env.local` file with:
+
+```env
+DB_URL=postgres://user:password@host:port/database
+```
+
+## Expected Database Tables
+
+The API assumes these tables exist:
+
+- `users`
+- `cities`
+- `trips`
+- `stops`
+- `activities`
+- `packing_items`
+- `trip_notes`
+
+## Key API Endpoints
+
+- `POST /api/auth/login`
+- `POST /api/auth/signup`
+- `GET /api/cities`
+- `GET /api/trips?userId=...`
+- `POST /api/trips`
+- `POST /api/stops`
+- `POST /api/activities`
+- `GET /api/packing?tripId=...`
+- `POST /api/packing`
+- `GET /api/notes?tripId=...`
+- `POST /api/notes`
+- `GET /api/trips/public/[slug]`
+
+## App Pages
+
+- `/` — landing page with city preview and features
+- `/auth/login` — login page
+- `/auth/signup` — signup page
+- `/dashboard` — authenticated dashboard
+- `/trips` — trip list
+- `/trips/create` — create a new trip
+
+## Notes
+
+The app currently expects a PostgreSQL database connection and uses server-side API routes to read/write travel data.
+
+If you want to test with the provided credentials, seed `users` with `test@test.com` / `test` and add any related trips or city records.

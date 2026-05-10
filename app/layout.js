@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Traveloop",
+  title: "Planzo",
   description: "Personalized travel planning made easy",
 };
 

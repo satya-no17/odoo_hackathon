@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
+import PlanzoLogo from "@/components/PlanzoLogo"
 import {
   Calendar,
   Clock,
@@ -13,6 +14,16 @@ import {
   MapPin,
   Share2,
 } from "lucide-react"
+
+function formatDate(value, fallback) {
+  if (!value) return fallback
+
+  return new Date(value).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+}
 
 export default function PublicTripPage() {
   const router = useRouter()
@@ -101,14 +112,8 @@ export default function PublicTripPage() {
     <main className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-xl border-b border-violet-100/50 sticky top-0 z-20 px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center">
-            <Globe size={14} className="text-white" />
-          </div>
-
-          <span className="text-violet-900 font-bold text-sm">
-            Traveloop
-          </span>
+        <Link href="/" className="flex items-center">
+          <PlanzoLogo className="h-16 w-auto" />
         </Link>
 
         <div className="flex items-center gap-2">
@@ -154,8 +159,8 @@ export default function PublicTripPage() {
             <div className="flex flex-wrap items-center gap-4 mt-6">
               <span className="flex items-center gap-2 text-white/80 text-sm">
                 <Calendar size={14} />
-                {trip.start_date || "No start"} →{" "}
-                {trip.end_date || "No end"}
+                {formatDate(trip.start_date, "No start")} →{" "}
+                {formatDate(trip.end_date, "No end")}
               </span>
 
               <span className="flex items-center gap-2 text-white/80 text-sm">
@@ -204,8 +209,8 @@ export default function PublicTripPage() {
               </p>
 
               <p className="text-sm font-semibold text-gray-800">
-                {trip.start_date || "No start"} →{" "}
-                {trip.end_date || "No end"}
+                {formatDate(trip.start_date, "No start")} →{" "}
+                {formatDate(trip.end_date, "No end")}
               </p>
             </div>
 

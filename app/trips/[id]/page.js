@@ -20,6 +20,16 @@ const categoryColors = {
   adventure: "bg-green-50 text-green-500 border-green-100",
 };
 
+function formatDate(value, fallback) {
+  if (!value) return fallback;
+
+  return new Date(value).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 export default function TripDetailPage() {
   const router = useRouter();
   const { id } = useParams();
@@ -127,7 +137,7 @@ export default function TripDetailPage() {
 
       {/* Navbar */}
       <nav className="sticky top-0 z-20 bg-white/80 backdrop-blur-2xl border-b border-violet-100/70 px-6 py-3 flex items-center justify-between">
-        <PlanzoLogo className="w-28 h-auto" />
+        <PlanzoLogo className="h-16 w-auto" />
         <Link href={`/trips/public/${trip.id}`}
           className="flex items-center gap-1.5 px-3.5 py-2 border border-violet-100 text-[13px] font-semibold text-gray-400 rounded-xl hover:bg-violet-50 hover:text-violet-500 hover:border-violet-200 transition-all duration-200"
         >
@@ -146,7 +156,7 @@ export default function TripDetailPage() {
           <p className="text-sm text-gray-400 mt-1 max-w-2xl">{trip.description || "No description — but every great trip starts somewhere."}</p>
           <div className="flex items-center gap-1.5 mt-2 text-[11px] text-gray-300 font-semibold">
             <Calendar size={11} />
-            {trip.start_date || "No start"} → {trip.end_date || "No end"}
+            {formatDate(trip.start_date, "No start")} → {formatDate(trip.end_date, "No end")}
           </div>
         </div>
 
