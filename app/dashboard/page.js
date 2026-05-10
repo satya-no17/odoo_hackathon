@@ -73,7 +73,7 @@ export default function DashboardPage() {
           </div>
           <div className="rounded border bg-white p-5">
             <p className="text-sm text-slate-500">Activity budget</p>
-            <p className="mt-2 text-3xl font-bold">${totalBudget.toFixed(0)}</p>
+            <p className="mt-2 text-3xl font-bold">₹{totalBudget.toFixed(0)}</p>
           </div>
           <div className="rounded border bg-white p-5">
             <p className="text-sm text-slate-500">Recommended cities</p>

@@ -5,10 +5,10 @@ import { useParams, useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 
 const quickActivities = [
-  { name: "City walking tour", category: "sightseeing", cost: 25, durationHours: 3 },
-  { name: "Local food tasting", category: "food", cost: 40, durationHours: 2 },
-  { name: "Museum visit", category: "culture", cost: 18, durationHours: 2 },
-  { name: "Day adventure", category: "adventure", cost: 75, durationHours: 5 },
+  { name: "City walking tour", category: "sightseeing", cost: 2000, durationHours: 3 },
+  { name: "Local food tasting", category: "food", cost: 1500, durationHours: 2 },
+  { name: "Museum visit", category: "culture", cost: 1000, durationHours: 2 },
+  { name: "Day adventure", category: "adventure", cost: 3500, durationHours: 5 },
 ]
 
 export default function TripDetailPage() {
@@ -25,7 +25,7 @@ export default function TripDetailPage() {
     departureDate: "",
   })
   const [activityForms, setActivityForms] = useState({})
-  const [packingForm, setPackingForm] = useState({ name: "", category: "misc" })
+  const [packingForm, setPackingForm] = useState({ name: "", category: "necessary" })
   const [noteForm, setNoteForm] = useState({ content: "", stopId: "" })
   const [message, setMessage] = useState("")
 
@@ -68,7 +68,7 @@ export default function TripDetailPage() {
       ...activityForms,
       [stopId]: {
         name: "",
-        category: "misc",
+        category: "funn....",
         cost: "",
         durationHours: "",
         ...(activityForms[stopId] || {}),
@@ -151,7 +151,7 @@ export default function TripDetailPage() {
       return
     }
 
-    setPackingForm({ name: "", category: "misc" })
+    setPackingForm({ name: "", category: "manadatory" })
     loadTrip()
   }
 
@@ -296,7 +296,7 @@ export default function TripDetailPage() {
                 {stops.map((stop, index) => {
                   const activityForm = activityForms[stop.id] || {
                     name: "",
-                    category: "misc",
+                    category: "funn..",
                     cost: "",
                     durationHours: "",
                   }
@@ -333,7 +333,7 @@ export default function TripDetailPage() {
                               key={activity.id}
                             >
                               <span>
-                                {activity.name} - {activity.category} - ${Number(activity.cost || 0).toFixed(0)}
+                                {activity.name} - {activity.category} - ₹{Number(activity.cost || 0).toFixed(0)}
                               </span>
                               <button
                                 className="text-red-700"
@@ -399,12 +399,12 @@ export default function TripDetailPage() {
             <section className="rounded border bg-white p-5">
               <h2 className="text-xl font-semibold">Budget</h2>
               <p className="mt-3 text-sm text-slate-600">Activity total</p>
-              <p className="text-3xl font-bold">${Number(budget.activityTotal || 0).toFixed(0)}</p>
+              <p className="text-3xl font-bold">₹{Number(budget.activityTotal || 0).toFixed(0)}</p>
               <p className="mt-3 text-sm text-slate-600">City cost estimate</p>
-              <p className="text-2xl font-bold">${Number(budget.estimatedDailyBase || 0).toFixed(0)}</p>
+              <p className="text-2xl font-bold">₹{Number(budget.estimatedDailyBase || 0).toFixed(0)}</p>
               <p className="mt-3 text-sm text-slate-600">Estimated total</p>
               <p className="text-3xl font-bold text-teal-700">
-                ${Number(budget.estimatedTotal || 0).toFixed(0)}
+                ₹{Number(budget.estimatedTotal || 0).toFixed(0)}
               </p>
             </section>
 
