@@ -1,497 +1,238 @@
-"use client"
+"use client";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Plus, MapPin, Calendar, DollarSign, List, LayoutGrid,
+  ArrowLeft, Share2, Download, ChevronDown, ChevronUp, Clock, Star
+} from "lucide-react";
+import Link from "next/link";
+import StopCard from "@/components/StopCard";
 
-import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+const MOCK_TRIP = {
+  id: 1,
+  name: "Europe Backpacking",
+  dates: "Jun 10 – Jun 28",
+  totalBudget: 2400,
+  spentBudget: 800,
+  stops: [
+    {
+      id: 1, city: "Paris", country: "France",
+      startDate: "Jun 10", endDate: "Jun 14",
+      activities: [
+        { name: "Eiffel Tower Visit", time: "10:00 AM", cost: 25 },
+        { name: "Louvre Museum",      time: "2:00 PM",  cost: 17 },
+        { name: "Seine River Cruise", time: "7:00 PM",  cost: 15 },
+      ],
+    },
+    {
+      id: 2, city: "Rome", country: "Italy",
+      startDate: "Jun 14", endDate: "Jun 19",
+      activities: [
+        { name: "Colosseum Tour",  time: "9:00 AM",  cost: 20 },
+        { name: "Vatican Museums", time: "2:00 PM",  cost: 35 },
+      ],
+    },
+    {
+      id: 3, city: "Barcelona", country: "Spain",
+      startDate: "Jun 19", endDate: "Jun 24",
+      activities: [],
+    },
+  ],
+};
 
-const quickActivities = [
-  { name: "City walking tour", category: "sightseeing", cost: 25, durationHours: 3 },
-  { name: "Local food tasting", category: "food", cost: 40, durationHours: 2 },
-  { name: "Museum visit", category: "culture", cost: 18, durationHours: 2 },
-  { name: "Day adventure", category: "adventure", cost: 75, durationHours: 5 },
-]
+const BUDGET_BREAKDOWN = [
+  { label: "Transport", amount: 420, color: "bg-violet-500",  pct: 52 },
+  { label: "Stay",      amount: 240, color: "bg-indigo-400",  pct: 30 },
+  { label: "Activities",amount: 100, color: "bg-purple-400",  pct: 13 },
+  { label: "Meals",     amount: 40,  color: "bg-violet-300",  pct: 5  },
+];
 
-export default function TripDetailPage() {
-  const router = useRouter()
-  const { id } = useParams()
-  const [user, setUser] = useState(null)
-  const [tripData, setTripData] = useState(null)
-  const [cities, setCities] = useState([])
-  const [cityQuery, setCityQuery] = useState("")
-  const [selectedCity, setSelectedCity] = useState(null)
-  const [stopForm, setStopForm] = useState({
-    cityName: "",
-    arrivalDate: "",
-    departureDate: "",
-  })
-  const [activityForms, setActivityForms] = useState({})
-  const [packingForm, setPackingForm] = useState({ name: "", category: "misc" })
-  const [noteForm, setNoteForm] = useState({ content: "", stopId: "" })
-  const [message, setMessage] = useState("")
+export default function ItineraryBuilderPage({ params }) {
+  const [trip, setTrip]       = useState(MOCK_TRIP);
+  const [view, setView]       = useState("list");   // list | budget
+  const [showAddStop, setShowAddStop] = useState(false);
+  const [newCity, setNewCity]         = useState({ city: "", country: "", startDate: "", endDate: "" });
 
-  const loadTrip = useCallback(async () => {
-    const res = await fetch(`/api/trips/${id}`)
-    const data = await res.json()
-    if (data.success) setTripData(data)
-    else setMessage(data.message || "Could not load trip")
-  }, [id])
+  const addStop = () => {
+    if (!newCity.city) return;
+    setTrip((p) => ({
+      ...p,
+      stops: [...p.stops, { id: Date.now(), ...newCity, activities: [] }],
+    }));
+    setNewCity({ city: "", country: "", startDate: "", endDate: "" });
+    setShowAddStop(false);
+  };
 
-  useEffect(() => {
-    const saved = localStorage.getItem("traveloop_user")
-    if (!saved) {
-      router.push("/auth/login")
-      return
-    }
-    const timer = setTimeout(() => setUser(JSON.parse(saved)), 0)
-    fetch(`/api/trips/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setTripData(data)
-        else setMessage(data.message || "Could not load trip")
-      })
+  const deleteStop = (id) => setTrip((p) => ({ ...p, stops: p.stops.filter((s) => s.id !== id) }));
 
-    return () => clearTimeout(timer)
-  }, [id, router])
-
-  useEffect(() => {
-    fetch(`/api/cities?q=${encodeURIComponent(cityQuery)}`)
-      .then((res) => res.json())
-      .then((data) => setCities(data.cities || []))
-  }, [cityQuery])
-
-  function updateStopField(event) {
-    setStopForm({ ...stopForm, [event.target.name]: event.target.value })
-  }
-
-  function updateActivityForm(stopId, field, value) {
-    setActivityForms({
-      ...activityForms,
-      [stopId]: {
-        name: "",
-        category: "misc",
-        cost: "",
-        durationHours: "",
-        ...(activityForms[stopId] || {}),
-        [field]: value,
-      },
-    })
-  }
-
-  async function addStop(event) {
-    event.preventDefault()
-    const payload = {
-      tripId: id,
-      cityId: selectedCity?.id,
-      cityName: selectedCity ? selectedCity.name : stopForm.cityName,
-      arrivalDate: stopForm.arrivalDate,
-      departureDate: stopForm.departureDate,
-      sortOrder: tripData?.stops?.length || 0,
-    }
-
-    const res = await fetch("/api/stops", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
-    const data = await res.json()
-
-    if (!data.success) {
-      setMessage(data.message || "Could not add stop")
-      return
-    }
-
-    setStopForm({ cityName: "", arrivalDate: "", departureDate: "" })
-    setSelectedCity(null)
-    setCityQuery("")
-    loadTrip()
-  }
-
-  async function deleteStop(stopId) {
-    if (!confirm("Delete this stop and its activities?")) return
-    await fetch(`/api/stops?id=${stopId}`, { method: "DELETE" })
-    loadTrip()
-  }
-
-  async function addActivity(stopId, preset) {
-    const form = preset || activityForms[stopId]
-    if (!form?.name) return
-
-    const res = await fetch("/api/activities", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stopId, ...form }),
-    })
-    const data = await res.json()
-
-    if (!data.success) {
-      setMessage(data.message || "Could not add activity")
-      return
-    }
-
-    setActivityForms({ ...activityForms, [stopId]: undefined })
-    loadTrip()
-  }
-
-  async function deleteActivity(activityId) {
-    await fetch(`/api/activities?id=${activityId}`, { method: "DELETE" })
-    loadTrip()
-  }
-
-  async function addPacking(event) {
-    event.preventDefault()
-    const res = await fetch("/api/packing", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tripId: id, ...packingForm }),
-    })
-    const data = await res.json()
-
-    if (!data.success) {
-      setMessage(data.message || "Could not add packing item")
-      return
-    }
-
-    setPackingForm({ name: "", category: "misc" })
-    loadTrip()
-  }
-
-  async function togglePacking(item) {
-    await fetch("/api/packing", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: item.id, isPacked: !item.is_packed }),
-    })
-    loadTrip()
-  }
-
-  async function deletePacking(itemId) {
-    await fetch(`/api/packing?id=${itemId}`, { method: "DELETE" })
-    loadTrip()
-  }
-
-  async function addNote(event) {
-    event.preventDefault()
-    const res = await fetch("/api/notes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tripId: id, ...noteForm }),
-    })
-    const data = await res.json()
-
-    if (!data.success) {
-      setMessage(data.message || "Could not add note")
-      return
-    }
-
-    setNoteForm({ content: "", stopId: "" })
-    loadTrip()
-  }
-
-  async function deleteNote(noteId) {
-    await fetch(`/api/notes?id=${noteId}`, { method: "DELETE" })
-    loadTrip()
-  }
-
-  if (!user || !tripData) {
-    return <main className="p-6">Loading trip...</main>
-  }
-
-  const { trip, stops, packingItems, notes, budget } = tripData
+  const spentPct = Math.round((trip.spentBudget / trip.totalBudget) * 100);
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-8 text-slate-950">
-      <section className="mx-auto max-w-6xl">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <Link className="text-sm text-teal-700" href="/trips">
-              Back to trips
+    <main className="min-h-screen bg-gray-50">
+
+      {/* ── Top bar ── */}
+      <div className="bg-white border-b border-violet-100/60 sticky top-0 z-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Link href="/trips"
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-violet-50 text-violet-600 hover:bg-violet-100 transition-colors">
+              <ArrowLeft size={17} />
             </Link>
-            <h1 className="mt-2 text-3xl font-bold">{trip.name}</h1>
-            <p className="mt-1 max-w-2xl text-slate-600">
-              {trip.description || "No description yet"}
-            </p>
-            <p className="mt-2 text-sm text-slate-600">
-              {trip.start_date || "No start date"} to {trip.end_date || "No end date"}
-            </p>
+            <div>
+              <h1 className="font-bold text-gray-900 text-base leading-tight">{trip.name}</h1>
+              <div className="flex items-center gap-1.5 text-gray-400 text-xs">
+                <Calendar size={10} /> {trip.dates}
+                <span>·</span>
+                <MapPin size={10} /> {trip.stops.length} stops
+              </div>
+            </div>
           </div>
-          <Link className="rounded border bg-white px-4 py-2" href={`/trips/public/${trip.id}`}>
-            Public View
-          </Link>
+          <div className="flex items-center gap-2">
+            <button className="w-9 h-9 flex items-center justify-center rounded-xl bg-violet-50 text-violet-600 hover:bg-violet-100 transition-colors">
+              <Share2 size={16} />
+            </button>
+            <button className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-2xl hover:shadow-lg hover:shadow-violet-200 transition-all">
+              <Download size={14} /> Export
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        {/* ── View toggle ── */}
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-gray-500 text-sm">{trip.stops.length} stops planned</p>
+          <div className="flex bg-white border border-violet-100 rounded-2xl p-1 gap-1">
+            {[
+              { key: "list",   icon: List },
+              { key: "budget", icon: DollarSign },
+            ].map(({ key, icon: Icon }) => (
+              <button key={key} onClick={() => setView(key)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                  view === key
+                    ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-sm"
+                    : "text-gray-500 hover:text-violet-600"
+                }`}>
+                <Icon size={14} /> {key.charAt(0).toUpperCase() + key.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {message && <p className="mt-4 rounded border border-red-200 bg-red-50 p-3 text-red-700">{message}</p>}
+        {/* ── LIST VIEW ── */}
+        {view === "list" && (
+          <div className="space-y-4">
+            {trip.stops.map((stop, i) => (
+              <StopCard key={stop.id} stop={stop} index={i} onDelete={deleteStop} />
+            ))}
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <section className="space-y-6">
-            <form className="rounded border bg-white p-5" onSubmit={addStop}>
-              <h2 className="text-xl font-semibold">Add stop</h2>
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium">Search city</label>
-                  <input
-                    className="mt-1 w-full rounded border px-3 py-2"
-                    onChange={(event) => {
-                      setCityQuery(event.target.value)
-                      setSelectedCity(null)
-                    }}
-                    placeholder="Paris, Tokyo, Bali..."
-                    value={cityQuery}
-                  />
-                  <div className="mt-2 max-h-44 overflow-auto rounded border">
-                    {cities.slice(0, 8).map((city) => (
-                      <button
-                        className={`block w-full px-3 py-2 text-left text-sm hover:bg-teal-50 ${
-                          selectedCity?.id === city.id ? "bg-teal-50" : ""
-                        }`}
-                        key={city.id}
-                        onClick={() => {
-                          setSelectedCity(city)
-                          setCityQuery(`${city.name}, ${city.country}`)
-                        }}
-                        type="button"
-                      >
-                        {city.name}, {city.country} - cost {city.cost_index}
-                      </button>
+            {/* Add stop */}
+            <AnimatePresence>
+              {showAddStop && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="bg-white rounded-3xl border border-violet-100 p-5 space-y-3"
+                >
+                  <h4 className="font-semibold text-gray-800 text-sm">Add New Stop</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { key: "city",      placeholder: "City name",   label: "City" },
+                      { key: "country",   placeholder: "Country",     label: "Country" },
+                      { key: "startDate", placeholder: "Jun 10",      label: "Start Date" },
+                      { key: "endDate",   placeholder: "Jun 14",      label: "End Date" },
+                    ].map(({ key, placeholder, label }) => (
+                      <div key={key}>
+                        <p className="text-xs text-gray-400 mb-1 font-medium">{label}</p>
+                        <input value={newCity[key]}
+                          onChange={(e) => setNewCity((p) => ({ ...p, [key]: e.target.value }))}
+                          placeholder={placeholder}
+                          className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-2.5 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:border-violet-300 transition-all" />
+                      </div>
                     ))}
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium">Custom city name</label>
-                  <input
-                    className="mt-1 w-full rounded border px-3 py-2"
-                    name="cityName"
-                    onChange={updateStopField}
-                    placeholder="Use if city is not listed"
-                    value={stopForm.cityName}
-                  />
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <input
-                      className="rounded border px-3 py-2"
-                      name="arrivalDate"
-                      onChange={updateStopField}
-                      type="date"
-                      value={stopForm.arrivalDate}
-                    />
-                    <input
-                      className="rounded border px-3 py-2"
-                      name="departureDate"
-                      onChange={updateStopField}
-                      type="date"
-                      value={stopForm.departureDate}
-                    />
-                  </div>
-                </div>
-              </div>
-              <button className="mt-4 rounded bg-teal-700 px-4 py-2 text-white">
-                Add Stop
-              </button>
-            </form>
-
-            <section className="rounded border bg-white p-5">
-              <h2 className="text-xl font-semibold">Itinerary</h2>
-              <div className="mt-4 space-y-4">
-                {stops.length === 0 && (
-                  <p className="text-sm text-slate-600">Add stops to build your route.</p>
-                )}
-                {stops.map((stop, index) => {
-                  const activityForm = activityForms[stop.id] || {
-                    name: "",
-                    category: "misc",
-                    cost: "",
-                    durationHours: "",
-                  }
-
-                  return (
-                    <article className="rounded border p-4" key={stop.id}>
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-teal-700">
-                            Stop {index + 1}
-                          </p>
-                          <h3 className="text-lg font-semibold">
-                            {stop.display_city || stop.city_name}
-                          </h3>
-                          <p className="text-sm text-slate-600">
-                            {stop.country || "Custom city"} - {stop.arrival_date || "No arrival"} to {stop.departure_date || "No departure"}
-                          </p>
-                        </div>
-                        <button
-                          className="rounded border px-3 py-2 text-sm text-red-700"
-                          onClick={() => deleteStop(stop.id)}
-                          type="button"
-                        >
-                          Delete stop
-                        </button>
-                      </div>
-
-                      <div className="mt-4">
-                        <h4 className="font-medium">Activities</h4>
-                        <div className="mt-2 space-y-2">
-                          {stop.activities.map((activity) => (
-                            <div
-                              className="flex flex-wrap items-center justify-between gap-2 rounded bg-slate-50 px-3 py-2 text-sm"
-                              key={activity.id}
-                            >
-                              <span>
-                                {activity.name} - {activity.category} - ${Number(activity.cost || 0).toFixed(0)}
-                              </span>
-                              <button
-                                className="text-red-700"
-                                onClick={() => deleteActivity(activity.id)}
-                                type="button"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {quickActivities.map((activity) => (
-                            <button
-                              className="rounded border px-3 py-1 text-sm"
-                              key={activity.name}
-                              onClick={() => addActivity(stop.id, activity)}
-                              type="button"
-                            >
-                              + {activity.name}
-                            </button>
-                          ))}
-                        </div>
-
-                        <div className="mt-3 grid gap-2 md:grid-cols-5">
-                          <input
-                            className="rounded border px-3 py-2 md:col-span-2"
-                            onChange={(event) => updateActivityForm(stop.id, "name", event.target.value)}
-                            placeholder="Activity name"
-                            value={activityForm.name}
-                          />
-                          <input
-                            className="rounded border px-3 py-2"
-                            onChange={(event) => updateActivityForm(stop.id, "category", event.target.value)}
-                            placeholder="Category"
-                            value={activityForm.category}
-                          />
-                          <input
-                            className="rounded border px-3 py-2"
-                            onChange={(event) => updateActivityForm(stop.id, "cost", event.target.value)}
-                            placeholder="Cost"
-                            type="number"
-                            value={activityForm.cost}
-                          />
-                          <button
-                            className="rounded bg-slate-900 px-3 py-2 text-white"
-                            onClick={() => addActivity(stop.id)}
-                            type="button"
-                          >
-                            Add
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  )
-                })}
-              </div>
-            </section>
-          </section>
-
-          <aside className="space-y-6">
-            <section className="rounded border bg-white p-5">
-              <h2 className="text-xl font-semibold">Budget</h2>
-              <p className="mt-3 text-sm text-slate-600">Activity total</p>
-              <p className="text-3xl font-bold">${Number(budget.activityTotal || 0).toFixed(0)}</p>
-              <p className="mt-3 text-sm text-slate-600">City cost estimate</p>
-              <p className="text-2xl font-bold">${Number(budget.estimatedDailyBase || 0).toFixed(0)}</p>
-              <p className="mt-3 text-sm text-slate-600">Estimated total</p>
-              <p className="text-3xl font-bold text-teal-700">
-                ${Number(budget.estimatedTotal || 0).toFixed(0)}
-              </p>
-            </section>
-
-            <section className="rounded border bg-white p-5">
-              <h2 className="text-xl font-semibold">Packing</h2>
-              <form className="mt-4 grid gap-2" onSubmit={addPacking}>
-                <input
-                  className="rounded border px-3 py-2"
-                  onChange={(event) => setPackingForm({ ...packingForm, name: event.target.value })}
-                  placeholder="Passport, charger..."
-                  required
-                  value={packingForm.name}
-                />
-                <input
-                  className="rounded border px-3 py-2"
-                  onChange={(event) => setPackingForm({ ...packingForm, category: event.target.value })}
-                  placeholder="documents"
-                  value={packingForm.category}
-                />
-                <button className="rounded bg-slate-900 px-3 py-2 text-white">
-                  Add item
-                </button>
-              </form>
-              <div className="mt-4 space-y-2">
-                {packingItems.map((item) => (
-                  <div className="flex items-center justify-between gap-2 text-sm" key={item.id}>
-                    <label className="flex items-center gap-2">
-                      <input
-                        checked={item.is_packed}
-                        onChange={() => togglePacking(item)}
-                        type="checkbox"
-                      />
-                      <span className={item.is_packed ? "line-through" : ""}>
-                        {item.name} ({item.category})
-                      </span>
-                    </label>
-                    <button className="text-red-700" onClick={() => deletePacking(item.id)}>
-                      Delete
+                  <div className="flex gap-3 pt-1">
+                    <button onClick={() => setShowAddStop(false)}
+                      className="flex-1 py-2.5 border border-gray-200 text-gray-500 text-sm font-medium rounded-2xl hover:bg-gray-50 transition-colors">
+                      Cancel
+                    </button>
+                    <button onClick={addStop}
+                      className="flex-1 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold rounded-2xl hover:shadow-lg hover:shadow-violet-200 transition-all">
+                      Add Stop
                     </button>
                   </div>
-                ))}
-              </div>
-            </section>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <section className="rounded border bg-white p-5">
-              <h2 className="text-xl font-semibold">Notes</h2>
-              <form className="mt-4 grid gap-2" onSubmit={addNote}>
-                <select
-                  className="rounded border px-3 py-2"
-                  onChange={(event) => setNoteForm({ ...noteForm, stopId: event.target.value })}
-                  value={noteForm.stopId}
-                >
-                  <option value="">Whole trip</option>
-                  {stops.map((stop) => (
-                    <option key={stop.id} value={stop.id}>
-                      {stop.display_city || stop.city_name}
-                    </option>
-                  ))}
-                </select>
-                <textarea
-                  className="min-h-24 rounded border px-3 py-2"
-                  onChange={(event) => setNoteForm({ ...noteForm, content: event.target.value })}
-                  placeholder="Hotel check-in, reminders, contacts..."
-                  required
-                  value={noteForm.content}
+            <button onClick={() => setShowAddStop(true)}
+              className="flex items-center justify-center gap-2 w-full py-4 rounded-3xl border-2 border-dashed border-violet-200 text-violet-500 text-sm font-medium hover:bg-violet-50 hover:border-violet-400 transition-all duration-300">
+              <Plus size={16} /> Add Another Stop
+            </button>
+          </div>
+        )}
+
+        {/* ── BUDGET VIEW ── */}
+        {view === "budget" && (
+          <div className="space-y-5">
+            {/* Summary card */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-3xl p-6 text-white">
+              <p className="text-violet-100/70 text-sm mb-1">Total Budget</p>
+              <p className="text-4xl font-extrabold mb-1">${trip.totalBudget.toLocaleString()}</p>
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-violet-100/70">Spent: <span className="text-white font-semibold">${trip.spentBudget}</span></span>
+                <span className="text-violet-100/70">Remaining: <span className="text-white font-semibold">${trip.totalBudget - trip.spentBudget}</span></span>
+              </div>
+              <div className="mt-4 h-2 bg-white/20 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${spentPct}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  className="h-full bg-white rounded-full"
                 />
-                <button className="rounded bg-slate-900 px-3 py-2 text-white">
-                  Add note
-                </button>
-              </form>
-              <div className="mt-4 space-y-3">
-                {notes.map((note) => (
-                  <article className="rounded bg-slate-50 p-3 text-sm" key={note.id}>
-                    <p>{note.content}</p>
-                    <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-                      <span>{new Date(note.created_at).toLocaleString()}</span>
-                      <button className="text-red-700" onClick={() => deleteNote(note.id)}>
-                        Delete
-                      </button>
+              </div>
+              <p className="text-violet-100/60 text-xs mt-1">{spentPct}% used</p>
+            </motion.div>
+
+            {/* Breakdown */}
+            <div className="bg-white rounded-3xl border border-violet-50 p-6">
+              <h3 className="font-bold text-gray-900 mb-5">Cost Breakdown</h3>
+              <div className="space-y-4">
+                {BUDGET_BREAKDOWN.map(({ label, amount, color, pct }, i) => (
+                  <div key={label}>
+                    <div className="flex justify-between mb-1.5">
+                      <span className="text-sm font-medium text-gray-700">{label}</span>
+                      <span className="text-sm font-bold text-violet-600">${amount}</span>
                     </div>
-                  </article>
+                    <div className="h-2 bg-violet-50 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.7, delay: i * 0.1, ease: "easeOut" }}
+                        className={`h-full ${color} rounded-full`}
+                      />
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{pct}% of total</p>
+                  </div>
                 ))}
               </div>
-            </section>
-          </aside>
-        </div>
-      </section>
+            </div>
+
+            {/* Per day avg */}
+            <div className="bg-white rounded-3xl border border-violet-50 p-6">
+              <h3 className="font-bold text-gray-900 mb-3">Per Day Average</h3>
+              <div className="flex items-end gap-2">
+                <p className="text-4xl font-extrabold text-violet-700">$44</p>
+                <p className="text-gray-400 text-sm mb-1">/ day</p>
+              </div>
+              <p className="text-gray-400 text-xs mt-1">Based on 18 days of travel</p>
+            </div>
+          </div>
+        )}
+      </div>
     </main>
-  )
+  );
 }
